@@ -1900,3 +1900,530 @@ body, html, #root {
   background: #ffffff;
   box-shadow: 0 0 0 3px rgba(234, 88, 12, 0.1);
 }
+#--------------------Dashboard-------------------#
+/* ==========================================
+   20. PREMIUM ADMIN DASHBOARD
+   ========================================== */
+.premium-dashboard-container {
+  display: flex;
+  flex-direction: column;
+  gap: 24px;
+}
+
+/* Hero KPI Cards */
+.hero-stats-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 24px;
+}
+
+.hero-stat-card {
+  background: #ffffff;
+  border-radius: 24px;
+  padding: 28px;
+  box-shadow: 0 10px 30px rgba(0,0,0,0.04);
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  height: 160px;
+  position: relative;
+  overflow: hidden;
+  border: 1px solid #f1f5f9;
+}
+
+.hero-stat-card::before {
+  content: '';
+  position: absolute;
+  top: -20px;
+  right: -20px;
+  width: 100px;
+  height: 100px;
+  background: rgba(255,255,255,0.5);
+  border-radius: 50%;
+  z-index: 0;
+}
+
+.hero-stat-top {
+  display: flex;
+  align-items: center;
+  gap: 20px;
+  z-index: 1;
+}
+
+.hero-icon-box {
+  width: 60px;
+  height: 60px;
+  border-radius: 18px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+
+.hero-icon-box.red { background: #fee2e2; color: #dc2626; }
+.hero-icon-box.blue { background: #dbeafe; color: #2563eb; }
+.hero-icon-box.green { background: #dcfce7; color: #16a34a; }
+
+.hero-stat-text h4 {
+  color: #64748b;
+  font-size: 0.95rem;
+  font-weight: 500;
+  margin-bottom: 6px;
+}
+
+.hero-stat-text h2 {
+  color: #1e293b;
+  font-size: 2rem;
+  font-weight: 800;
+  margin: 0;
+}
+
+.hero-stat-change {
+  font-size: 0.85rem;
+  font-weight: 600;
+  z-index: 1;
+  align-self: flex-start;
+  padding: 4px 10px;
+  border-radius: 20px;
+}
+
+.hero-stat-change.red { color: #dc2626; background: #fef2f2; }
+.hero-stat-change.blue { color: #2563eb; background: #eff6ff; }
+.hero-stat-change.green { color: #16a34a; background: #f0fdf4; }
+
+/* Analytics Grid */
+.analytics-grid {
+  display: grid;
+  grid-template-columns: 2fr 1fr;
+  gap: 24px;
+}
+
+.glass-analytics-card {
+  background: #ffffff;
+  border-radius: 24px;
+  padding: 28px;
+  box-shadow: 0 10px 30px rgba(0,0,0,0.04);
+  border: 1px solid #f1f5f9;
+}
+
+.analytics-header { margin-bottom: 30px; }
+.analytics-header h3 { color: #1e293b; font-size: 1.2rem; font-weight: 700; margin-bottom: 4px; }
+.analytics-header p { color: #64748b; font-size: 0.9rem; }
+
+/* Premium Bar Chart */
+.premium-bar-chart {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-end;
+  height: 280px;
+  border-bottom: 2px solid #f1f5f9;
+  padding-bottom: 10px;
+}
+
+.premium-bar-group {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 12px;
+  flex: 1;
+  height: 100%;
+  justify-content: flex-end;
+}
+
+.premium-bar-wrapper {
+  width: 100%;
+  height: 100%;
+  display: flex;
+  justify-content: center;
+  align-items: flex-end;
+}
+
+.premium-bar {
+  width: 35%;
+  background: linear-gradient(180deg, #ea580c 0%, #b91c1c 100%);
+  border-radius: 8px 8px 0 0;
+  position: relative;
+  transition: height 0.8s cubic-bezier(0.4, 0, 0.2, 1);
+  box-shadow: 0 5px 15px rgba(220, 38, 38, 0.2);
+}
+
+.premium-bar:hover { filter: brightness(1.1); }
+
+.premium-bar-tooltip {
+  position: absolute;
+  top: -28px;
+  font-size: 0.8rem;
+  font-weight: 700;
+  color: #1e293b;
+  background: #fff;
+  padding: 4px 8px;
+  border-radius: 6px;
+  box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+  opacity: 0;
+  transition: opacity 0.2s;
+}
+
+.premium-bar:hover .premium-bar-tooltip { opacity: 1; }
+
+.premium-bar-label { font-size: 0.85rem; color: #64748b; font-weight: 500; }
+
+/* CSS Donut Chart */
+.donut-chart-container {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  margin-bottom: 30px;
+}
+
+.donut-chart {
+  width: 180px;
+  height: 180px;
+  border-radius: 50%;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  transition: background 0.5s ease;
+}
+
+.donut-inner-circle {
+  width: 130px;
+  height: 130px;
+  background: #ffffff;
+  border-radius: 50%;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  align-items: center;
+  box-shadow: inset 0 0 10px rgba(0,0,0,0.05);
+}
+
+.donut-inner-circle h2 { color: #1e293b; font-size: 1.5rem; font-weight: 800; }
+.donut-inner-circle p { color: #64748b; font-size: 0.8rem; font-weight: 500; }
+
+.donut-legend {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.donut-legend-item {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 10px;
+  background: #f8fafc;
+  border-radius: 12px;
+}
+
+.legend-dot { width: 12px; height: 12px; border-radius: 50%; }
+.legend-name { color: #1e293b; font-size: 0.9rem; font-weight: 600; flex: 1; }
+.legend-value { color: #64748b; font-size: 0.9rem; font-weight: 700; }
+
+/* Customer Cell in Table */
+.customer-cell {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.customer-avatar {
+  width: 32px;
+  height: 32px;
+  background: linear-gradient(135deg, #b91c1c, #ea580c);
+  color: white;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-weight: 700;
+  font-size: 0.8rem;
+}
+
+/* Responsive */
+@media (max-width: 1024px) {
+  .hero-stats-grid { grid-template-columns: 1fr; }
+  .analytics-grid { grid-template-columns: 1fr; }
+}
+/* ==========================================
+   21. COMPACT PREMIUM DASHBOARD
+   ========================================== */
+.dash-container {
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+}
+
+/* KPI Row */
+.dash-kpi-row {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 20px;
+}
+
+.dash-kpi-card {
+  background: #ffffff;
+  border-radius: 16px;
+  padding: 20px;
+  box-shadow: 0 4px 15px rgba(0,0,0,0.03);
+  border: 1px solid #f1f5f9;
+  display: flex;
+  align-items: center;
+  gap: 16px;
+}
+
+.dash-kpi-icon {
+  width: 44px;
+  height: 44px;
+  border-radius: 12px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+
+.dash-kpi-icon.red { background: #fee2e2; color: #dc2626; }
+.dash-kpi-icon.blue { background: #dbeafe; color: #2563eb; }
+.dash-kpi-icon.green { background: #dcfce7; color: #16a34a; }
+
+.dash-kpi-text h4 {
+  color: #64748b;
+  font-size: 0.8rem;
+  font-weight: 500;
+  margin-bottom: 4px;
+}
+
+.dash-kpi-text h2 {
+  color: #1e293b;
+  font-size: 1.4rem; /* Reduced font size */
+  font-weight: 700;
+  margin-bottom: 4px;
+}
+
+.dash-kpi-change {
+  font-size: 0.7rem;
+  font-weight: 600;
+}
+.dash-kpi-change.red { color: #dc2626; }
+.dash-kpi-change.blue { color: #2563eb; }
+.dash-kpi-change.green { color: #16a34a; }
+
+/* Main Row */
+.dash-main-row {
+  display: grid;
+  grid-template-columns: 1fr 1.5fr;
+  gap: 20px;
+}
+
+.dash-card {
+  background: #ffffff;
+  border-radius: 16px;
+  padding: 24px;
+  box-shadow: 0 4px 15px rgba(0,0,0,0.03);
+  border: 1px solid #f1f5f9;
+}
+
+.dash-card-header {
+  margin-bottom: 20px;
+}
+
+.dash-card-header h3 {
+  color: #1e293b;
+  font-size: 1rem; /* Reduced font size */
+  font-weight: 700;
+  margin-bottom: 4px;
+}
+
+.dash-card-header p {
+  color: #64748b;
+  font-size: 0.8rem;
+}
+
+/* Shop Sales List */
+.shop-sales-list {
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+}
+
+.shop-sale-top {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 8px;
+}
+
+.shop-sale-top h5 {
+  color: #1e293b;
+  font-size: 0.9rem;
+  font-weight: 600;
+}
+
+.shop-sale-amount {
+  color: #1e293b;
+  font-size: 0.95rem;
+  font-weight: 700;
+}
+
+.shop-progress-track {
+  width: 100%;
+  height: 8px;
+  background: #f1f5f9;
+  border-radius: 4px;
+  overflow: hidden;
+}
+
+.shop-progress-fill {
+  height: 100%;
+  border-radius: 4px;
+  transition: width 0.8s ease;
+}
+
+/* Compact Table */
+.modern-data-table.compact th,
+.modern-data-table.compact td {
+  padding: 12px 12px; /* Reduced padding */
+  font-size: 0.85rem;
+}
+
+/* Responsive */
+@media (max-width: 1024px) {
+  .dash-kpi-row { grid-template-columns: 1fr; }
+  .dash-main-row { grid-template-columns: 1fr; }
+}
+/* ==========================================
+   22. PAYMENT DONUT CHART & LAYOUT
+   ========================================== */
+/* Ensure Shop Sales and Payment Chart sit side-by-side */
+.dash-main-row {
+  grid-template-columns: 1fr 1fr; 
+}
+
+/* Payment Chart Layout */
+.pay-chart-layout {
+  display: flex;
+  align-items: center;
+  gap: 24px;
+}
+
+.pay-donut-container {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  flex-shrink: 0;
+}
+
+.pay-donut {
+  width: 140px;
+  height: 140px;
+  border-radius: 50%;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  transition: background 0.5s ease;
+}
+
+.pay-donut-inner {
+  width: 100px;
+  height: 100px;
+  background: #ffffff;
+  border-radius: 50%;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  align-items: center;
+  box-shadow: inset 0 0 8px rgba(0,0,0,0.05);
+}
+
+.pay-donut-inner h2 {
+  color: #1e293b;
+  font-size: 1.2rem;
+  font-weight: 800;
+}
+
+.pay-donut-inner p {
+  color: #64748b;
+  font-size: 0.7rem;
+  font-weight: 500;
+}
+
+/* Payment Legend */
+.pay-legend {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  flex: 1;
+}
+
+.pay-legend-item {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 8px 12px;
+  background: #f8fafc;
+  border-radius: 10px;
+}
+
+.legend-dot {
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+  flex-shrink: 0;
+}
+
+.legend-name {
+  color: #1e293b;
+  font-size: 0.85rem;
+  font-weight: 600;
+  flex: 1;
+}
+
+.legend-value {
+  color: #64748b;
+  font-size: 0.85rem;
+  font-weight: 700;
+}
+
+/* Responsive */
+@media (max-width: 1024px) {
+  .dash-main-row {
+    grid-template-columns: 1fr; /* Stack on mobile */
+  }
+  
+  .pay-chart-layout {
+    flex-direction: column;
+  }
+}
+/* ==========================================
+   24. TOP 5 ITEMS RANK BADGES
+   ========================================== */
+.rank-badge {
+  width: 28px;
+  height: 28px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-weight: 800;
+  font-size: 0.85rem;
+  color: white;
+}
+
+.rank-badge.rank-1 {
+  background: linear-gradient(135deg, #f59e0b, #d97706); /* Gold */
+  box-shadow: 0 2px 5px rgba(245, 158, 11, 0.4);
+}
+
+.rank-badge.rank-2 {
+  background: linear-gradient(135deg, #64748b, #475569); /* Silver */
+  box-shadow: 0 2px 5px rgba(100, 116, 139, 0.4);
+}
+
+.rank-badge.rank-3 {
+  background: linear-gradient(135deg, #ea580c, #c2410c); /* Bronze */
+  box-shadow: 0 2px 5px rgba(234, 88, 12, 0.4);
+}
+
+.rank-badge.rank-4, .rank-badge.rank-5 {
+  background: #e2e8f0;
+  color: #64748b;
+}
