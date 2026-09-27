@@ -3,25 +3,57 @@ import { useNavigate } from 'react-router-dom';
 import logo from '../assets/logo.jpg'; // Your logo
 
 export default function Login() {
-  const [username, setUsername] = useState('');
+  const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [loading, setLoading] = useState(false);
+  const [error, setError] = useState('');
   const navigate = useNavigate();
 
   const handleLogin = async (e) => {
     e.preventDefault();
-    if (!username || !password) {
-      alert('Please enter username and password');
+    if (!email || !password) {
+      setError('Please enter email and password');
       return;
     }
+
     setLoading(true);
+    setError('');
+
     try {
-      // API CALL WILL GO HERE
-      const role = username.toLowerCase() === 'admin' ? 'admin' : 'cashier';
-      if (role === 'admin') navigate('/admin/dashboard');
-      else navigate('/cashier/billing');
-    } catch (error) {
-      alert('Login failed. Please check your credentials.');
+      // Use the .env variable here
+      const apiUrl = import.meta.env.VITE_API_URL;
+      
+      const response = await fetch(`${apiUrl}/users/login`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ email, password }),
+      });
+
+      const data = await response.json();
+
+      if (!response.ok) {
+        throw new Error(data.detail || 'Invalid email or password');
+      }
+
+      // Save token and user data to localStorage
+      localStorage.setItem('token', data.access_token);
+      localStorage.setItem('user', JSON.stringify(data.user));
+
+      // Redirect based on role
+      if (data.user.role === 'superadmin') {
+        navigate('/superadmin'); // <-- Added Super Admin Route
+      } else if (data.user.role === 'admin') {
+        navigate('/admin/dashboard');
+      } else if (data.user.role === 'cashier') {
+        navigate('/cashier/billing');
+      } else {
+        setError('Access denied. Unknown user role.');
+      }
+
+    } catch (err) {
+      setError(err.message || 'Login failed. Please try again.');
       setLoading(false);
     }
   };
@@ -44,16 +76,31 @@ export default function Login() {
 
         {/* Form Section */}
         <div className="hb-form-section">
-         
           
+          {/* Error Message Display */}
+          {error && (
+            <div style={{ 
+              color: '#dc2626', 
+              background: '#fee2e2', 
+              padding: '10px 14px', 
+              borderRadius: '8px', 
+              fontSize: '0.85rem', 
+              marginBottom: '20px', 
+              textAlign: 'center',
+              fontWeight: '600'
+            }}>
+              {error}
+            </div>
+          )}
+
           <form onSubmit={handleLogin} className="hb-form">
             <div className="hb-input-group">
-              <label>Username</label>
+              <label>Email</label>
               <input 
-                type="text" 
-                placeholder="Enter your username" 
-                value={username}
-                onChange={(e) => setUsername(e.target.value)}
+                type="email" 
+                placeholder="Enter your email" 
+                value={email}
+                onChange={(e) => setEmail(e.target.value)}
                 required
               />
             </div>
@@ -68,8 +115,6 @@ export default function Login() {
                 required
               />
             </div>
-
-           
 
             <button type="submit" className="hb-signin-btn" disabled={loading}>
               {loading ? 'Signing in...' : 'Sign In'}

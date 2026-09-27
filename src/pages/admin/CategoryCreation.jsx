@@ -1,82 +1,179 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 
 export default function CategoryPage() {
-  const [categories, setCategories] = useState([
-    { id: 1, name: 'Vegetables', shop: 'Hari Vegetables', status: 'Active' },
-    { id: 2, name: 'Broiler', shop: 'Hari Broilers', status: 'Active' },
-    { id: 3, name: 'Eggs', shop: 'Hari Eggs', status: 'Active' },
-  ]);
+  const apiUrl = import.meta.env.VITE_API_URL;
+  const token = localStorage.getItem('token');
 
-  const availableShops = ['Hari Vegetables', 'Hari Broilers', 'Hari Eggs', 'Hari Fruits & Nuts'];
+  const [categories, setCategories] = useState([]);
+  const [shops, setShops] = useState([]);
 
   // Add Modal State
   const [isAddModalOpen, setIsAddModalOpen] = useState(false);
-  const [selectedShop, setSelectedShop] = useState(availableShops[0]);
-  const [categoryNames, setCategoryNames] = useState(['']);
+  const [formData, setFormData] = useState({ name: '', description: '', shop_ids: [] });
 
   // Edit Modal State
   const [isEditModalOpen, setIsEditModalOpen] = useState(false);
-  const [editData, setEditData] = useState({ id: null, name: '', shop: '' });
+  const [editData, setEditData] = useState({ id: null, name: '', description: '', shop_ids: [], is_active: true });
 
-  // --- ADD MODAL LOGIC ---
+  // --- FETCH SHOPS ---
+  const fetchShops = async () => {
+    try {
+      const response = await fetch(`${apiUrl}/shops/`, {
+        headers: { 'Authorization': `Bearer ${token}` }
+      });
+      const data = await response.json();
+      if (response.ok) {
+        // Extract array safely
+        if (data.shops) setShops(data.shops);
+        else if (Array.isArray(data)) setShops(data);
+      }
+    } catch (error) { console.error("Failed to fetch shops:", error); }
+  };
+
+  // --- FETCH CATEGORIES ---
+  const fetchCategories = async () => {
+    try {
+      const response = await fetch(`${apiUrl}/categories/`, {
+        headers: { 'Authorization': `Bearer ${token}` }
+      });
+      const data = await response.json();
+      if (response.ok && data.categories) {
+        setCategories(data.categories);
+      }
+    } catch (error) { console.error("Failed to fetch categories:", error); }
+  };
+
+  // --- EFFECTS ---
+  useEffect(() => {
+    fetchCategories();
+    fetchShops();
+  }, []);
+
+  // --- ADD LOGIC ---
   const handleOpenAddModal = () => {
-    setSelectedShop(availableShops[0]);
-    setCategoryNames(['']);
+    setFormData({ name: '', description: '', shop_ids: [] });
     setIsAddModalOpen(true);
   };
 
-  const handleAddRow = () => setCategoryNames([...categoryNames, '']);
-
-  const handleRemoveRow = (index) => {
-    const list = [...categoryNames];
-    list.splice(index, 1);
-    setCategoryNames(list);
+  const handleShopToggle = (shopId) => {
+    setFormData(prev => {
+      const isSelected = prev.shop_ids.includes(shopId);
+      return {
+        ...prev,
+        shop_ids: isSelected ? prev.shop_ids.filter(id => id !== shopId) : [...prev.shop_ids, shopId]
+      };
+    });
   };
 
-  const handleRowChange = (index, value) => {
-    const list = [...categoryNames];
-    list[index] = value;
-    setCategoryNames(list);
-  };
-
-  const handleAddSubmit = (e) => {
+  const handleAddSubmit = async (e) => {
     e.preventDefault();
-    const validNames = categoryNames.filter(name => name.trim() !== '');
-    if (validNames.length === 0) return;
+    if (formData.shop_ids.length === 0) {
+      alert("Please select at least one shop.");
+      return;
+    }
 
-    const newId = categories.length > 0 ? Math.max(...categories.map(c => c.id)) + 1 : 1;
-    const newCategories = validNames.map((name, i) => ({
-      id: newId + i,
-      name: name,
-      shop: selectedShop,
-      status: 'Active'
-    }));
+    try {
+      // Match Pydantic CreateCategoryRequest
+      const payload = {
+        name: formData.name,
+        description: formData.description || null,
+        shop_ids: formData.shop_ids
+      };
 
-    setCategories([...categories, ...newCategories]);
-    setIsAddModalOpen(false);
+      const response = await fetch(`${apiUrl}/categories/create`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` },
+        body: JSON.stringify(payload)
+      });
+
+      if (response.ok) {
+        setIsAddModalOpen(false);
+        fetchCategories();
+      } else {
+        const errorData = await response.json();
+        alert(errorData.detail || "Failed to create category");
+      }
+    } catch (error) {
+      alert("Error connecting to API");
+    }
   };
 
-  // --- EDIT MODAL LOGIC ---
+  // --- EDIT LOGIC ---
   const handleEditClick = (cat) => {
-    setEditData({ id: cat.id, name: cat.name, shop: cat.shop });
+    setEditData({
+      id: cat.id,
+      name: cat.name,
+      description: cat.description || '',
+      shop_ids: cat.shop_ids || [],
+      is_active: cat.is_active
+    });
     setIsEditModalOpen(true);
   };
 
-  const handleEditChange = (field, value) => {
-    setEditData({ ...editData, [field]: value });
+  const handleEditShopToggle = (shopId) => {
+    setEditData(prev => {
+      const isSelected = prev.shop_ids.includes(shopId);
+      return {
+        ...prev,
+        shop_ids: isSelected ? prev.shop_ids.filter(id => id !== shopId) : [...prev.shop_ids, shopId]
+      };
+    });
   };
 
-  const handleEditSubmit = (e) => {
+  const handleEditSubmit = async (e) => {
     e.preventDefault();
-    setCategories(categories.map(cat => 
-      cat.id === editData.id ? { ...cat, name: editData.name, shop: editData.shop } : cat
-    ));
-    setIsEditModalOpen(false);
+    if (editData.shop_ids.length === 0) {
+      alert("Please select at least one shop.");
+      return;
+    }
+
+    try {
+      // Match Pydantic UpdateCategoryRequest
+      const payload = {
+        name: editData.name,
+        description: editData.description || null,
+        is_active: editData.is_active,
+        shop_ids: editData.shop_ids
+      };
+
+      const response = await fetch(`${apiUrl}/categories/${editData.id}`, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` },
+        body: JSON.stringify(payload)
+      });
+
+      if (response.ok) {
+        setIsEditModalOpen(false);
+        fetchCategories();
+      } else {
+        const errorData = await response.json();
+        alert(errorData.detail || "Failed to update category");
+      }
+    } catch (error) {
+      alert("Error connecting to API");
+    }
   };
 
   // --- DELETE LOGIC ---
-  const handleDelete = (id) => {
-    setCategories(categories.filter(cat => cat.id !== id));
+  const handleDelete = async (id) => {
+    if (!window.confirm('Are you sure you want to delete this category?')) return;
+    try {
+      const response = await fetch(`${apiUrl}/categories/${id}`, {
+        method: 'DELETE',
+        headers: { 'Authorization': `Bearer ${token}` }
+      });
+      if (response.ok) fetchCategories();
+    } catch (error) { alert("Error connecting to API"); }
+  };
+
+  // Helper to display shop names in table safely
+  const getShopNames = (shopIds) => {
+    if (!Array.isArray(shops) || shops.length === 0) return 'Loading...';
+    const names = shopIds.map(id => {
+      const shop = shops.find(s => s.id === id);
+      return shop ? shop.name : null; // Uses shop.name
+    }).filter(Boolean);
+    return names.length > 0 ? names.join(', ') : '—';
   };
 
   return (
@@ -100,47 +197,50 @@ export default function CategoryPage() {
             <tr>
               <th>ID</th>
               <th>Category Name</th>
-              <th>Shop Name</th>
+              <th>Description</th>
+              <th>Assigned Shops</th>
               <th>Status</th>
               <th>Action</th>
             </tr>
           </thead>
           <tbody>
-            {categories.map((cat) => (
-              <tr key={cat.id}>
-                <td>#{cat.id}</td>
-                <td>
-                  <div className="table-name-cell">
-                    {cat.name}
-                  </div>
-                </td>
-                <td>{cat.shop}</td>
-                <td>
-                  <span className="status-badge active">{cat.status}</span>
-                </td>
-                <td>
-                  <div className="table-action-btns">
-                    {/* Added onClick to Edit Button */}
-                    <button className="edit-btn" onClick={() => handleEditClick(cat)}>
-                      <EditIcon />
-                    </button>
-                    <button className="delete-btn" onClick={() => handleDelete(cat.id)}>
-                      <TrashIcon />
-                    </button>
-                  </div>
-                </td>
-              </tr>
-            ))}
+            {categories.length === 0 ? (
+              <tr><td colSpan="6" style={{textAlign: 'center', color: '#64748b'}}>No categories found</td></tr>
+            ) : (
+              categories.map((cat) => (
+                <tr key={cat.id}>
+                  <td>#{cat.id}</td>
+                  <td><div className="table-name-cell">{cat.name}</div></td>
+                  <td className="truncate-cell">{cat.description || '—'}</td>
+                  <td>{getShopNames(cat.shop_ids)}</td>
+                  <td>
+                    <span className={`status-badge ${cat.is_active ? 'available' : 'out-of-stock'}`}>
+                      {cat.is_active ? 'Active' : 'Inactive'}
+                    </span>
+                  </td>
+                  <td>
+                    <div className="table-action-btns">
+                      <button className="edit-btn" onClick={() => handleEditClick(cat)}>
+                        <EditIcon />
+                      </button>
+                      <button className="delete-btn" onClick={() => handleDelete(cat.id)}>
+                        <TrashIcon />
+                      </button>
+                    </div>
+                  </td>
+                </tr>
+              ))
+            )}
           </tbody>
         </table>
       </div>
 
-      {/* --- ADD CATEGORIES MODAL --- */}
+      {/* --- ADD CATEGORY MODAL --- */}
       {isAddModalOpen && (
         <div className="modal-backdrop" onClick={() => setIsAddModalOpen(false)}>
           <div className="modal-card large" onClick={(e) => e.stopPropagation()}>
             <div className="modal-header">
-              <h3>Add New Categories</h3>
+              <h3>Add New Category</h3>
               <button className="modal-close-btn" onClick={() => setIsAddModalOpen(false)}>
                 <CloseIcon />
               </button>
@@ -148,47 +248,45 @@ export default function CategoryPage() {
 
             <form onSubmit={handleAddSubmit} className="modal-form">
               <div className="form-group">
-                <label>Select Shop</label>
-                <select 
-                  className="modal-select"
-                  value={selectedShop} 
-                  onChange={(e) => setSelectedShop(e.target.value)}
-                >
-                  {availableShops.map(shop => (
-                    <option key={shop} value={shop}>{shop}</option>
-                  ))}
-                </select>
+                <label>Category Name</label>
+                <input 
+                  type="text" 
+                  placeholder="e.g. Leafy Greens" 
+                  value={formData.name}
+                  onChange={(e) => setFormData({ ...formData, name: e.target.value })}
+                  required
+                />
               </div>
 
               <div className="form-group">
-                <label>Category Names</label>
-                <div className="dynamic-fields-container">
-                  {categoryNames.map((name, index) => (
-                    <div className="dynamic-field-row" key={index}>
-                      <input 
-                        type="text" 
-                        placeholder={`Category ${index + 1} (e.g. Leafy Greens)`} 
-                        value={name}
-                        onChange={(e) => handleRowChange(index, e.target.value)}
-                        required
+                <label>Description (Optional)</label>
+                <input 
+                  type="text" 
+                  placeholder="Short description" 
+                  value={formData.description}
+                  onChange={(e) => setFormData({ ...formData, description: e.target.value })}
+                />
+              </div>
+
+              <div className="form-group">
+                <label>Assign to Shops (Multi-Select)</label>
+                <div className="menu-checkbox-grid">
+                  {shops.map(shop => (
+                    <label className="premium-check-card" key={shop.id}>
+                      <input
+                        type="checkbox"
+                        checked={formData.shop_ids.includes(shop.id)}
+                        onChange={() => handleShopToggle(shop.id)}
                       />
-                      {categoryNames.length > 1 && (
-                        <button type="button" className="remove-row-btn" onClick={() => handleRemoveRow(index)}>
-                          <TrashIcon />
-                        </button>
-                      )}
-                    </div>
+                      <span className="check-text">{shop.name}</span>
+                    </label>
                   ))}
                 </div>
               </div>
 
-              <button type="button" className="add-row-btn" onClick={handleAddRow}>
-                <PlusIcon /> Add Another Category
-              </button>
-
               <div className="modal-footer">
                 <button type="button" className="modal-cancel-btn" onClick={() => setIsAddModalOpen(false)}>Cancel</button>
-                <button type="submit" className="primary-btn">Save All</button>
+                <button type="submit" className="primary-btn">Save Category</button>
               </div>
             </form>
           </div>
@@ -198,7 +296,7 @@ export default function CategoryPage() {
       {/* --- EDIT CATEGORY MODAL --- */}
       {isEditModalOpen && (
         <div className="modal-backdrop" onClick={() => setIsEditModalOpen(false)}>
-          <div className="modal-card" onClick={(e) => e.stopPropagation()}>
+          <div className="modal-card large" onClick={(e) => e.stopPropagation()}>
             <div className="modal-header">
               <h3>Edit Category</h3>
               <button className="modal-close-btn" onClick={() => setIsEditModalOpen(false)}>
@@ -212,22 +310,58 @@ export default function CategoryPage() {
                 <input 
                   type="text" 
                   value={editData.name}
-                  onChange={(e) => handleEditChange('name', e.target.value)}
+                  onChange={(e) => setEditData({ ...editData, name: e.target.value })}
                   required
                 />
               </div>
 
               <div className="form-group">
-                <label>Shop Name</label>
-                <select 
-                  className="modal-select"
-                  value={editData.shop}
-                  onChange={(e) => handleEditChange('shop', e.target.value)}
-                >
-                  {availableShops.map(shop => (
-                    <option key={shop} value={shop}>{shop}</option>
+                <label>Description</label>
+                <input 
+                  type="text" 
+                  value={editData.description}
+                  onChange={(e) => setEditData({ ...editData, description: e.target.value })}
+                />
+              </div>
+
+              <div className="form-group">
+                <label>Assigned Shops (Multi-Select)</label>
+                <div className="menu-checkbox-grid">
+                  {shops.map(shop => (
+                    <label className="premium-check-card" key={shop.id}>
+                      <input
+                        type="checkbox"
+                        checked={editData.shop_ids.includes(shop.id)}
+                        onChange={() => handleEditShopToggle(shop.id)}
+                      />
+                      <span className="check-text">{shop.name}</span>
+                    </label>
                   ))}
-                </select>
+                </div>
+              </div>
+
+              <div className="form-group">
+                <label>Status</label>
+                <div className="radio-group">
+                  <label className="radio-label">
+                    <input 
+                      type="radio" 
+                      name="edit-cat-status" 
+                      checked={editData.is_active === true} 
+                      onChange={() => setEditData({ ...editData, is_active: true })}
+                    />
+                    <span>Active</span>
+                  </label>
+                  <label className="radio-label">
+                    <input 
+                      type="radio" 
+                      name="edit-cat-status" 
+                      checked={editData.is_active === false} 
+                      onChange={() => setEditData({ ...editData, is_active: false })}
+                    />
+                    <span>Inactive</span>
+                  </label>
+                </div>
               </div>
 
               <div className="modal-footer">

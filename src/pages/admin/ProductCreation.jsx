@@ -1,28 +1,73 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 
 export default function ProductPage() {
-  // Mock Categories (In a real app, you would fetch these from your database)
-  const availableCategories = ['Vegetables', 'Broiler', 'Eggs', 'Fruits & Nuts'];
+  const apiUrl = import.meta.env.VITE_API_URL;
+  const token = localStorage.getItem('token');
 
-  const [products, setProducts] = useState([
-    { id: 1, name: 'Tomatoes', category: 'Vegetables', price: 40, unit: 'kg', available: true },
-    { id: 2, name: 'Whole Chicken', category: 'Broiler', price: 180, unit: 'kg', available: true },
-    { id: 3, name: 'Farm Eggs', category: 'Eggs', price: 6, unit: 'pcs', available: false },
-  ]);
+  const [products, setProducts] = useState([]);
+  const [categories, setCategories] = useState([]);
+  const [shops, setShops] = useState([]);
 
   // Add Modal State
   const [isAddModalOpen, setIsAddModalOpen] = useState(false);
   const [formData, setFormData] = useState({
-    name: '', category: availableCategories[0], price: '', unit: 'kg', available: true
+    name: '', category_id: '', price: '', unit: 'kg', shop_ids: [], is_active: true
   });
 
   // Edit Modal State
   const [isEditModalOpen, setIsEditModalOpen] = useState(false);
   const [editData, setEditData] = useState(null);
 
+  // --- FETCH PRODUCTS ---
+  const fetchProducts = async () => {
+    try {
+      const response = await fetch(`${apiUrl}/products/`, {
+        headers: { 'Authorization': `Bearer ${token}` }
+      });
+      const data = await response.json();
+      if (response.ok) {
+        setProducts(Array.isArray(data) ? data : (data.products || []));
+      }
+    } catch (error) { console.error("Failed to fetch products:", error); }
+  };
+
+  // --- FETCH CATEGORIES ---
+  const fetchCategories = async () => {
+    try {
+      const response = await fetch(`${apiUrl}/categories/`, {
+        headers: { 'Authorization': `Bearer ${token}` }
+      });
+      const data = await response.json();
+      if (response.ok) {
+        setCategories(data.categories || data);
+      }
+    } catch (error) { console.error("Failed to fetch categories:", error); }
+  };
+
+  // --- FETCH SHOPS ---
+  const fetchShops = async () => {
+    try {
+      const response = await fetch(`${apiUrl}/shops/`, {
+        headers: { 'Authorization': `Bearer ${token}` }
+      });
+      const data = await response.json();
+      if (response.ok) {
+        if (data.shops) setShops(data.shops);
+        else if (Array.isArray(data)) setShops(data);
+      }
+    } catch (error) { console.error("Failed to fetch shops:", error); }
+  };
+
+  // --- EFFECTS ---
+  useEffect(() => {
+    fetchProducts();
+    fetchCategories();
+    fetchShops();
+  }, []);
+
   // --- ADD LOGIC ---
   const handleOpenAddModal = () => {
-    setFormData({ name: '', category: availableCategories[0], price: '', unit: 'kg', available: true });
+    setFormData({ name: '', category_id: '', price: '', unit: 'kg', shop_ids: [], is_active: true });
     setIsAddModalOpen(true);
   };
 
@@ -30,21 +75,61 @@ export default function ProductPage() {
     setFormData({ ...formData, [field]: value });
   };
 
-  const handleAddSubmit = (e) => {
+  const handleShopToggle = (shopId) => {
+    setFormData(prev => {
+      const isSelected = prev.shop_ids.includes(shopId);
+      return {
+        ...prev,
+        shop_ids: isSelected ? prev.shop_ids.filter(id => id !== shopId) : [...prev.shop_ids, shopId]
+      };
+    });
+  };
+
+  const handleAddSubmit = async (e) => {
     e.preventDefault();
-    const newId = products.length > 0 ? Math.max(...products.map(p => p.id)) + 1 : 1;
-    const newProduct = {
-      ...formData,
-      id: newId,
-      price: parseFloat(formData.price) || 0
-    };
-    setProducts([...products, newProduct]);
-    setIsAddModalOpen(false);
+    if (formData.shop_ids.length === 0) {
+      alert("Please select at least one shop.");
+      return;
+    }
+
+    try {
+      const payload = {
+        name: formData.name,
+        category_id: parseInt(formData.category_id),
+        unit: formData.unit,
+        price: parseFloat(formData.price),
+        shop_ids: formData.shop_ids
+      };
+
+      const response = await fetch(`${apiUrl}/products/create`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` },
+        body: JSON.stringify(payload)
+      });
+
+      if (response.ok) {
+        setIsAddModalOpen(false);
+        fetchProducts();
+      } else {
+        const errorData = await response.json();
+        alert(errorData.detail || "Failed to create product");
+      }
+    } catch (error) {
+      alert("Error connecting to API");
+    }
   };
 
   // --- EDIT LOGIC ---
   const handleEditClick = (product) => {
-    setEditData(product);
+    setEditData({
+      id: product.id,
+      name: product.name,
+      category_id: product.category_id,
+      price: product.price,
+      unit: product.unit,
+      shop_ids: product.shop_ids || [],
+      is_active: product.is_active
+    });
     setIsEditModalOpen(true);
   };
 
@@ -52,17 +137,76 @@ export default function ProductPage() {
     setEditData({ ...editData, [field]: value });
   };
 
-  const handleEditSubmit = (e) => {
+  const handleEditShopToggle = (shopId) => {
+    setEditData(prev => {
+      const isSelected = prev.shop_ids.includes(shopId);
+      return {
+        ...prev,
+        shop_ids: isSelected ? prev.shop_ids.filter(id => id !== shopId) : [...prev.shop_ids, shopId]
+      };
+    });
+  };
+
+  const handleEditSubmit = async (e) => {
     e.preventDefault();
-    setProducts(products.map(p => 
-      p.id === editData.id ? { ...editData, price: parseFloat(editData.price) || 0 } : p
-    ));
-    setIsEditModalOpen(false);
+    if (editData.shop_ids.length === 0) {
+      alert("Please select at least one shop.");
+      return;
+    }
+
+    try {
+      const payload = {
+        name: editData.name,
+        category_id: parseInt(editData.category_id),
+        unit: editData.unit,
+        price: parseFloat(editData.price),
+        shop_ids: editData.shop_ids,
+        is_active: editData.is_active
+      };
+
+      const response = await fetch(`${apiUrl}/products/${editData.id}`, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` },
+        body: JSON.stringify(payload)
+      });
+
+      if (response.ok) {
+        setIsEditModalOpen(false);
+        fetchProducts();
+      } else {
+        const errorData = await response.json();
+        alert(errorData.detail || "Failed to update product");
+      }
+    } catch (error) {
+      alert("Error connecting to API");
+    }
   };
 
   // --- DELETE LOGIC ---
-  const handleDelete = (id) => {
-    setProducts(products.filter(p => p.id !== id));
+  const handleDelete = async (id) => {
+    if (!window.confirm('Are you sure you want to delete this product?')) return;
+    try {
+      const response = await fetch(`${apiUrl}/products/${id}`, {
+        method: 'DELETE',
+        headers: { 'Authorization': `Bearer ${token}` }
+      });
+      if (response.ok) fetchProducts();
+    } catch (error) { alert("Error connecting to API"); }
+  };
+
+  // Helpers to display names in table
+  const getCategoryName = (catId) => {
+    const cat = categories.find(c => c.id === catId);
+    return cat ? cat.name : '—';
+  };
+
+  const getShopNames = (shopIds) => {
+    if (!Array.isArray(shops) || shops.length === 0) return 'Loading...';
+    const names = shopIds.map(id => {
+      const shop = shops.find(s => s.id === id);
+      return shop ? shop.name : null;
+    }).filter(Boolean);
+    return names.length > 0 ? names.join(', ') : '—';
   };
 
   return (
@@ -89,35 +233,41 @@ export default function ProductPage() {
               <th>Category</th>
               <th>Price</th>
               <th>Unit</th>
+              <th>Assigned Shops</th>
               <th>Status</th>
               <th>Action</th>
             </tr>
           </thead>
           <tbody>
-            {products.map((prod) => (
-              <tr key={prod.id}>
-                <td>#{prod.id}</td>
-                <td><div className="table-name-cell">{prod.name}</div></td>
-                <td>{prod.category}</td>
-                <td>₹{prod.price}</td>
-                <td>{prod.unit}</td>
-                <td>
-                  <span className={`status-badge ${prod.available ? 'available' : 'out-of-stock'}`}>
-                    {prod.available ? 'Available' : 'Out of Stock'}
-                  </span>
-                </td>
-                <td>
-                  <div className="table-action-btns">
-                    <button className="edit-btn" onClick={() => handleEditClick(prod)}>
-                      <EditIcon />
-                    </button>
-                    <button className="delete-btn" onClick={() => handleDelete(prod.id)}>
-                      <TrashIcon />
-                    </button>
-                  </div>
-                </td>
-              </tr>
-            ))}
+            {products.length === 0 ? (
+              <tr><td colSpan="8" style={{textAlign: 'center', color: '#64748b'}}>No products found</td></tr>
+            ) : (
+              products.map((prod) => (
+                <tr key={prod.id}>
+                  <td>#{prod.id}</td>
+                  <td><div className="table-name-cell">{prod.name}</div></td>
+                  <td>{getCategoryName(prod.category_id)}</td>
+                  <td>₹{prod.price}</td>
+                  <td>{prod.unit}</td>
+                  <td>{getShopNames(prod.shop_ids)}</td>
+                  <td>
+                    <span className={`status-badge ${prod.is_active ? 'available' : 'out-of-stock'}`}>
+                      {prod.is_active ? 'Available' : 'Out of Stock'}
+                    </span>
+                  </td>
+                  <td>
+                    <div className="table-action-btns">
+                      <button className="edit-btn" onClick={() => handleEditClick(prod)}>
+                        <EditIcon />
+                      </button>
+                      <button className="delete-btn" onClick={() => handleDelete(prod.id)}>
+                        <TrashIcon />
+                      </button>
+                    </div>
+                  </td>
+                </tr>
+              ))
+            )}
           </tbody>
         </table>
       </div>
@@ -125,7 +275,7 @@ export default function ProductPage() {
       {/* --- ADD PRODUCT MODAL --- */}
       {isAddModalOpen && (
         <div className="modal-backdrop" onClick={() => setIsAddModalOpen(false)}>
-          <div className="modal-card" onClick={(e) => e.stopPropagation()}>
+          <div className="modal-card large" onClick={(e) => e.stopPropagation()}>
             <div className="modal-header">
               <h3>Add New Product</h3>
               <button className="modal-close-btn" onClick={() => setIsAddModalOpen(false)}>
@@ -146,31 +296,20 @@ export default function ProductPage() {
                 />
               </div>
 
-              {/* Category Dropdown */}
-              <div className="form-group">
-                <label>Category</label>
-                <select 
-                  className="modal-select"
-                  value={formData.category} 
-                  onChange={(e) => handleInputChange('category', e.target.value)}
-                >
-                  {availableCategories.map(cat => (
-                    <option key={cat} value={cat}>{cat}</option>
-                  ))}
-                </select>
-              </div>
-
               <div className="form-row-2">
                 <div className="form-group">
-                  <label>Price (₹)</label>
-                  <input 
-                    type="number" 
-                    step="0.01"
-                    placeholder="e.g. 50" 
-                    value={formData.price}
-                    onChange={(e) => handleInputChange('price', e.target.value)}
+                  <label>Category</label>
+                  <select 
+                    className="modal-select"
+                    value={formData.category_id} 
+                    onChange={(e) => handleInputChange('category_id', e.target.value)}
                     required
-                  />
+                  >
+                    <option value="">Select Category</option>
+                    {categories.map(cat => (
+                      <option key={cat.id} value={cat.id}>{cat.name}</option>
+                    ))}
+                  </select>
                 </div>
 
                 <div className="form-group">
@@ -188,30 +327,32 @@ export default function ProductPage() {
                 </div>
               </div>
 
-              {/* Available Status Toggle */}
               <div className="form-group">
-                <label>Availability Status</label>
-                <div className="radio-group">
-                  <label className="radio-label">
-                    <input 
-                      type="radio" 
-                      name="add-available" 
-                      value="true" 
-                      checked={formData.available === true} 
-                      onChange={() => handleInputChange('available', true)}
-                    />
-                    <span>Available</span>
-                  </label>
-                  <label className="radio-label">
-                    <input 
-                      type="radio" 
-                      name="add-available" 
-                      value="false" 
-                      checked={formData.available === false} 
-                      onChange={() => handleInputChange('available', false)}
-                    />
-                    <span>Out of Stock</span>
-                  </label>
+                <label>Price (₹)</label>
+                <input 
+                  type="number" 
+                  step="0.01"
+                  placeholder="e.g. 50" 
+                  value={formData.price}
+                  onChange={(e) => handleInputChange('price', e.target.value)}
+                  required
+                />
+              </div>
+
+              {/* Multi-Select Shops */}
+              <div className="form-group">
+                <label>Assign to Shops (Multi-Select)</label>
+                <div className="menu-checkbox-grid">
+                  {shops.map(shop => (
+                    <label className="premium-check-card" key={shop.id}>
+                      <input
+                        type="checkbox"
+                        checked={formData.shop_ids.includes(shop.id)}
+                        onChange={() => handleShopToggle(shop.id)}
+                      />
+                      <span className="check-text">{shop.name}</span>
+                    </label>
+                  ))}
                 </div>
               </div>
 
@@ -227,7 +368,7 @@ export default function ProductPage() {
       {/* --- EDIT PRODUCT MODAL --- */}
       {isEditModalOpen && editData && (
         <div className="modal-backdrop" onClick={() => setIsEditModalOpen(false)}>
-          <div className="modal-card" onClick={(e) => e.stopPropagation()}>
+          <div className="modal-card large" onClick={(e) => e.stopPropagation()}>
             <div className="modal-header">
               <h3>Edit Product</h3>
               <button className="modal-close-btn" onClick={() => setIsEditModalOpen(false)}>
@@ -246,29 +387,20 @@ export default function ProductPage() {
                 />
               </div>
 
-              <div className="form-group">
-                <label>Category</label>
-                <select 
-                  className="modal-select"
-                  value={editData.category} 
-                  onChange={(e) => handleEditChange('category', e.target.value)}
-                >
-                  {availableCategories.map(cat => (
-                    <option key={cat} value={cat}>{cat}</option>
-                  ))}
-                </select>
-              </div>
-
               <div className="form-row-2">
                 <div className="form-group">
-                  <label>Price (₹)</label>
-                  <input 
-                    type="number" 
-                    step="0.01"
-                    value={editData.price}
-                    onChange={(e) => handleEditChange('price', e.target.value)}
+                  <label>Category</label>
+                  <select 
+                    className="modal-select"
+                    value={editData.category_id} 
+                    onChange={(e) => handleEditChange('category_id', e.target.value)}
                     required
-                  />
+                  >
+                    <option value="">Select Category</option>
+                    {categories.map(cat => (
+                      <option key={cat.id} value={cat.id}>{cat.name}</option>
+                    ))}
+                  </select>
                 </div>
 
                 <div className="form-group">
@@ -287,14 +419,41 @@ export default function ProductPage() {
               </div>
 
               <div className="form-group">
+                <label>Price (₹)</label>
+                <input 
+                  type="number" 
+                  step="0.01"
+                  value={editData.price}
+                  onChange={(e) => handleEditChange('price', e.target.value)}
+                  required
+                />
+              </div>
+
+              <div className="form-group">
+                <label>Assigned Shops (Multi-Select)</label>
+                <div className="menu-checkbox-grid">
+                  {shops.map(shop => (
+                    <label className="premium-check-card" key={shop.id}>
+                      <input
+                        type="checkbox"
+                        checked={editData.shop_ids.includes(shop.id)}
+                        onChange={() => handleEditShopToggle(shop.id)}
+                      />
+                      <span className="check-text">{shop.name}</span>
+                    </label>
+                  ))}
+                </div>
+              </div>
+
+              <div className="form-group">
                 <label>Availability Status</label>
                 <div className="radio-group">
                   <label className="radio-label">
                     <input 
                       type="radio" 
                       name="edit-available" 
-                      checked={editData.available === true} 
-                      onChange={() => handleEditChange('available', true)}
+                      checked={editData.is_active === true} 
+                      onChange={() => handleEditChange('is_active', true)}
                     />
                     <span>Available</span>
                   </label>
@@ -302,8 +461,8 @@ export default function ProductPage() {
                     <input 
                       type="radio" 
                       name="edit-available" 
-                      checked={editData.available === false} 
-                      onChange={() => handleEditChange('available', false)}
+                      checked={editData.is_active === false} 
+                      onChange={() => handleEditChange('is_active', false)}
                     />
                     <span>Out of Stock</span>
                   </label>

@@ -2,12 +2,12 @@ import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
 import Login from './pages/Login';
 import Layout from './components/Layout';
 import BillingPage from './pages/cashier/BillingPage';
-import CategoryCreation from './pages/admin/CategoryCreation';
-import ProductCreation from './pages/admin/ProductCreation';
-import ShopCreation from './pages/admin/ShopCreation';
-import Dashboard from './pages/admin/Dashboard'; 
-import UserCreation from './pages/admin/UserPage'; 
-
+import CategoryPage from './pages/admin/CategoryCreation'; // (Or CategoryCreation depending on your file name)
+import ProductPage from './pages/admin/ProductCreation'; // (Or ProductCreation)
+import ShopPage from './pages/admin/ShopCreation'; // (Or ShopCreation)
+import DashboardPage from './pages/admin/Dashboard'; // (Or Dashboard)
+import SuperAdminPage from './pages/SuperAdminPage'; // <-- 1. ADD THIS IMPORT
+import UserPage from './pages/admin/UserPage';
 // Temporary placeholders for remaining Admin pages
 const ReportsPage = () => <div className="page-card"><h2>Reports Content Goes Here</h2></div>;
 
@@ -20,13 +20,14 @@ function App() {
         
         {/* Admin Routes */}
         <Route path="/admin" element={<Layout role="admin" />}>
-          <Route path="dashboard" element={<Dashboard />} /> 
-          <Route path="shop" element={<ShopCreation />} />
-          {/* ADDED USER ROUTE */}
-          <Route path="users" element={<UserCreation />} />
-          <Route path="category" element={<CategoryCreation />} />
-          <Route path="product" element={<ProductCreation />} />
+          <Route path="dashboard" element={<DashboardPage />} /> 
+          <Route path="shop" element={<ShopPage />} />
+          <Route path="users" element={<UserPage />} /> {/* Assuming you have this */}
+          <Route path="category" element={<CategoryPage />} />
+          <Route path="product" element={<ProductPage />} />
           <Route path="reports" element={<ReportsPage />} />
+          {/* 2. ADD THIS ROUTE */}
+          <Route path="superadmin" element={<SuperAdminPage />} /> 
         </Route>
 
         {/* Cashier Routes */}
@@ -37,5 +38,5 @@ function App() {
     </Router>
   );
 }
-    
+
 export default App;

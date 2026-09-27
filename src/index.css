@@ -2427,3 +2427,329 @@ body, html, #root {
   background: #e2e8f0;
   color: #64748b;
 }
+/* ==========================================
+   25. SUPER ADMIN TABS & TOGGLE SWITCHES
+   ========================================== */
+.super-admin-tabs {
+  display: flex;
+  gap: 10px;
+  border-bottom: 2px solid #f1f5f9;
+  margin-bottom: 24px;
+}
+
+.tab-btn {
+  padding: 12px 24px;
+  background: transparent;
+  border: none;
+  color: #64748b;
+  font-size: 0.95rem;
+  font-weight: 600;
+  cursor: pointer;
+  border-bottom: 3px solid transparent;
+  transition: all 0.2s ease;
+  margin-bottom: -2px; /* Align with border */
+}
+
+.tab-btn:hover {
+  color: #1e293b;
+}
+
+.tab-btn.active {
+  color: #b91c1c; /* Haribiriyani Red */
+  border-bottom-color: #b91c1c;
+}
+
+/* Toggle Switch */
+.switch {
+  position: relative;
+  display: inline-block;
+  width: 44px;
+  height: 24px;
+}
+
+.switch input {
+  opacity: 0;
+  width: 0;
+  height: 0;
+}
+
+.slider {
+  position: absolute;
+  cursor: pointer;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background-color: #cbd5e1;
+  transition: .4s;
+}
+
+.slider:before {
+  position: absolute;
+  content: "";
+  height: 18px;
+  width: 18px;
+  left: 3px;
+  bottom: 3px;
+  background-color: white;
+  transition: .4s;
+}
+
+input:checked + .slider {
+  background-color: #16a34a; /* Green when active */
+}
+
+input:focus + .slider {
+  box-shadow: 0 0 1px #16a34a;
+}
+
+input:checked + .slider:before {
+  transform: translateX(20px);
+}
+
+.slider.round {
+  border-radius: 24px;
+}
+
+.slider.round:before {
+  border-radius: 50%;
+}
+/* ==========================================
+   26. PERMISSIONS MATRIX LAYOUT
+   ========================================== */
+.permission-layout {
+  display: grid;
+  grid-template-columns: 300px 1fr;
+  gap: 24px;
+}
+
+.permission-left-panel {
+  border-right: 1px solid #f1f5f9;
+  padding-right: 24px;
+}
+
+.permission-right-panel {
+  max-height: 450px;
+  overflow-y: auto;
+  padding-right: 10px;
+}
+
+.menu-checkbox-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
+  gap: 12px;
+}
+
+.premium-check-card {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  background: #f8fafc;
+  border: 1px solid #e2e8f0;
+  padding: 14px 16px;
+  border-radius: 12px;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.premium-check-card:hover {
+  background: #ffffff;
+  border-color: #cbd5e1;
+  box-shadow: 0 2px 8px rgba(0,0,0,0.05);
+}
+
+.premium-check-card input[type="checkbox"] {
+  width: 18px;
+  height: 18px;
+  accent-color: #b91c1c; /* Haribiriyani Red */
+  cursor: pointer;
+}
+
+.check-text {
+  color: #1e293b;
+  font-size: 0.95rem;
+  font-weight: 600;
+}
+
+/* Responsive */
+@media (max-width: 768px) {
+  .permission-layout {
+    grid-template-columns: 1fr;
+  }
+  .permission-left-panel {
+    border-right: none;
+    border-bottom: 1px solid #f1f5f9;
+    padding-right: 0;
+    padding-bottom: 20px;
+    margin-bottom: 10px;
+  }
+}
+/* Clean outlined logout button for Super Admin page */
+.logout-btn-clean {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  background: #fff;
+  color: #dc2626;
+  border: 1px solid #fecaca;
+  padding: 10px 20px;
+  border-radius: 10px;
+  font-size: 0.9rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.3s ease;
+}
+
+.logout-btn-clean:hover {
+  background: #dc2626;
+  color: white;
+  border-color: #dc2626;
+  box-shadow: 0 4px 12px rgba(220, 38, 38, 0.3);
+}
+/* ==========================================
+   27. PREMIUM LOGOUT BUTTONS
+   ========================================== */
+
+/* Sidebar Premium Glassmorphism Logout */
+.hb-logout-premium {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  width: 100%;
+  padding: 8px 12px;
+  background: rgba(255, 255, 255, 0.1);
+  backdrop-filter: blur(5px);
+  color: #fff;
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  border-radius: 8px;
+  font-size: 0.75rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  margin-top: 8px;
+  text-align: left;
+}
+
+.hb-logout-premium:hover {
+  background: #dc2626; /* Bright Red on Hover */
+  border-color: transparent;
+  box-shadow: 0 4px 12px rgba(220, 38, 38, 0.4);
+}
+
+/* Collapsed Sidebar Icon Only Logout */
+.hb-logout-icon-only {
+  width: 36px;
+  height: 36px;
+  background: rgba(255, 255, 255, 0.1);
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  border-radius: 8px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  color: #fff;
+  transition: all 0.3s ease;
+}
+
+.hb-logout-icon-only:hover {
+  background: #dc2626;
+  border-color: transparent;
+}
+
+/* Navbar Sleek Logout Icon Button */
+.hb-logout-icon-btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: #f1f5f9;
+  border: none;
+  width: 42px;
+  height: 42px;
+  border-radius: 12px;
+  cursor: pointer;
+  color: #64748b;
+  transition: all 0.2s ease;
+}
+
+.hb-logout-icon-btn:hover {
+  background: #dc2626;
+  color: white;
+  transform: rotate(180deg); /* Cool spin effect on hover */
+}
+/* ==========================================
+   28. SIDEBAR ACCORDION & CHILD MENUS
+   ========================================== */
+.hb-nav-group {
+  width: 100%;
+}
+
+/* Push chevron to the right */
+.hb-nav-item.has-children {
+  justify-content: space-between;
+}
+
+/* Chevron rotation animation */
+.hb-chevron {
+  transition: transform 0.3s ease;
+  color: rgba(255, 255, 255, 0.5);
+}
+
+.hb-chevron.expanded {
+  transform: rotate(180deg);
+}
+
+/* Child Menu Container */
+.hb-nav-children {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  margin-top: 4px;
+  margin-left: 20px; /* Indent children to the right */
+  padding-left: 10px;
+  border-left: 2px solid rgba(255, 255, 255, 0.1); /* Subtle vertical line */
+}
+
+/* Child Menu Item Style */
+.hb-nav-item.child {
+  padding: 10px 16px;
+  font-size: 0.85rem;
+  border-radius: 10px;
+  margin-bottom: 0;
+  background: transparent;
+}
+
+.hb-nav-item.child:hover {
+  background: rgba(255, 255, 255, 0.05);
+}
+
+.hb-nav-item.child.active {
+  background: rgba(255, 255, 255, 0.15);
+  border-left: none; /* Remove left border for child active state */
+  box-shadow: inset 0 0 10px rgba(255, 255, 255, 0.05);
+}
+
+.hb-nav-item.child svg {
+  width: 16px;
+  height: 16px;
+}
+/* Discount Input Field in POS */
+.discount-row {
+  align-items: center;
+}
+
+.discount-input {
+  width: 100px;
+  padding: 6px 10px;
+  border: 1px solid #e2e8f0;
+  border-radius: 6px;
+  text-align: right;
+  font-weight: 700;
+  color: #dc2626;
+  background: #fef2f2;
+  outline: none;
+}
+
+.discount-input:focus {
+  border-color: #dc2626;
+  box-shadow: 0 0 0 2px rgba(220, 38, 38, 0.1);
+}
