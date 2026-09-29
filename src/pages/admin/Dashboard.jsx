@@ -1,43 +1,104 @@
+import { useState, useEffect } from 'react';
+
 export default function DashboardPage() {
-  // Top KPI Data
+  const apiUrl = import.meta.env.VITE_API_URL;
+  const token = localStorage.getItem('token');
+
+  const [dashboardData, setDashboardData] = useState(null);
+
+  // --- FETCH DASHBOARD DATA ---
+  useEffect(() => {
+    const fetchDashboard = async () => {
+      try {
+        const response = await fetch(`${apiUrl}/reports/dashboard`, {
+          headers: { 'Authorization': `Bearer ${token}` }
+        });
+        const data = await response.json();
+        if (response.ok) {
+          setDashboardData(data);
+        } else {
+          console.error("Failed to fetch dashboard data");
+        }
+      } catch (error) {
+        console.error("Error fetching dashboard data:", error);
+      }
+    };
+
+    fetchDashboard();
+  }, [token, apiUrl]);
+
+  // --- CALCULATIONS & DATA MAPPING ---
+  
+  // 1. Summary Stats
+  const summary = dashboardData?.summary || {};
   const stats = [
-    { title: 'Daily Sales', value: '₹45,200', change: '+12%', icon: SalesIcon, color: 'red' },
-    { title: 'Total Bills', value: '128', change: '+8%', icon: OrdersIcon, color: 'blue' },
-    { title: 'Avg Order Value', value: '₹353', change: '+2%', icon: AvgIcon, color: 'green' },
+    { title: 'Total Sales', value: `₹${(summary.total_sales || 0).toFixed(2)}`, icon: SalesIcon, color: 'red' },
+    { title: 'Total Bills', value: summary.total_bills || 0, icon: OrdersIcon, color: 'blue' },
+    { title: 'Avg Order Value', value: `₹${(summary.average_bill_value || 0).toFixed(2)}`, icon: AvgIcon, color: 'green' },
   ];
 
-  // Shop Sales Breakdown Data
-  const shopSales = [
-    { name: 'Hari Vegetables', amount: '₹12,500', percentage: 60, color: '#16a34a' },
-    { name: 'Hari Broilers', amount: '₹25,700', percentage: 85, color: '#dc2626' },
-    { name: 'Hari Eggs', amount: '₹7,000', percentage: 40, color: '#f59e0b' },
-  ];
+  // 2. Shop Sales (Calculate % relative to max shop sale for progress bar)
+  const rawShopSales = dashboardData?.shop_sales || [];
+  const maxShopSale = rawShopSales.length > 0 ? Math.max(...rawShopSales.map(s => s.total_sales)) : 1;
+  
+  const shopColors = ['#16a34a', '#dc2626', '#f59e0b', '#2563eb', '#7c3aed'];
+  const shopSales = rawShopSales.map((shop, index) => ({
+    name: shop.shop_name,
+    amount: `₹${shop.total_sales.toFixed(2)}`,
+    percentage: Math.round((shop.total_sales / maxShopSale) * 100),
+    color: shopColors[index % shopColors.length]
+  }));
 
-  // Payment Methods Data
-  const paymentMethods = [
-    { name: 'Cash', amount: '₹25,000', percentage: 55, color: '#16a34a' },
-    { name: 'Card', amount: '₹12,000', percentage: 27, color: '#2563eb' },
-    { name: 'GPay', amount: '₹6,000', percentage: 13, color: '#dc2626' },
-    { name: 'Other', amount: '₹2,200', percentage: 5, color: '#f59e0b' },
-  ];
+  // 3. Payment Methods (Calculate % for donut chart)
+  const rawPayments = dashboardData?.payment_methods || {};
+  const paymentColors = {
+    Cash: '#16a34a',
+    Card: '#2563eb',
+    GPay: '#dc2626',
+    Other: '#f59e0b'
+  };
+
+  const totalPaymentAmount = Object.values(rawPayments).reduce((acc, pm) => acc + (pm.total_amount || 0), 0);
+  
+  const paymentMethods = Object.keys(rawPayments).map(name => {
+    const pmData = rawPayments[name] || {};
+    const amount = pmData.total_amount || 0;
+    return {
+      name,
+      amount: `₹${amount.toFixed(2)}`,
+      percentage: totalPaymentAmount > 0 ? Math.round((amount / totalPaymentAmount) * 100) : 0,
+      color: paymentColors[name] || '#94a3b8'
+    };
+  });
 
   // Calculate conic gradient for Payment Donut Chart
   let payGradient = 'conic-gradient(';
   let payStart = 0;
+  let hasPayments = false;
+  
   paymentMethods.forEach(pm => {
-    payGradient += `${pm.color} ${payStart}% ${payStart + pm.percentage}%, `;
-    payStart += pm.percentage;
+    if (pm.percentage > 0) {
+      hasPayments = true;
+      payGradient += `${pm.color} ${payStart}% ${payStart + pm.percentage}%, `;
+      payStart += pm.percentage;
+    }
   });
+  
   payGradient += `#f1f5f9 ${payStart}% 100%)`;
+  
+  // Fallback if no payments exist
+  if (!hasPayments) {
+    payGradient = 'conic-gradient(#e2e8f0 0% 100%)';
+  }
 
-  // Top 5 Selling Items Data
-  const topItems = [
-    { rank: 1, name: 'Whole Chicken', shop: 'Hari Broilers', qty: '45 kg', amount: '₹8,100' },
-    { rank: 2, name: 'Tomatoes', shop: 'Hari Vegetables', qty: '85 kg', amount: '₹3,400' },
-    { rank: 3, name: 'Chicken Breast', shop: 'Hari Broilers', qty: '20 kg', amount: '₹4,400' },
-    { rank: 4, name: 'Onions', shop: 'Hari Vegetables', qty: '60 kg', amount: '₹3,000' },
-    { rank: 5, name: 'Farm Eggs', shop: 'Hari Eggs', qty: '150 pcs', amount: '₹900' },
-  ];
+  // 4. Top 5 Selling Items
+  const rawTopItems = dashboardData?.top_selling_items || [];
+  const topItems = rawTopItems.map((item, index) => ({
+    rank: index + 1,
+    name: item.product_name,
+    qty: `${item.total_quantity} ${item.unit || ''}`,
+    amount: `₹${item.total_amount.toFixed(2)}`
+  }));
 
   return (
     <div className="dash-container">
@@ -54,7 +115,7 @@ export default function DashboardPage() {
               <div className="dash-kpi-text">
                 <h4>{stat.title}</h4>
                 <h2>{stat.value}</h2>
-                <span className={`dash-kpi-change ${stat.color}`}>{stat.change} vs yesterday</span>
+                {/* Removed fake "+12% vs yesterday" since API doesn't provide historical data */}
               </div>
             </div>
           );
@@ -71,17 +132,21 @@ export default function DashboardPage() {
             <p>Revenue generated by each shop</p>
           </div>
           <div className="shop-sales-list">
-            {shopSales.map((shop, index) => (
-              <div className="shop-sale-item" key={index}>
-                <div className="shop-sale-top">
-                  <h5>{shop.name}</h5>
-                  <span className="shop-sale-amount">{shop.amount}</span>
+            {shopSales.length === 0 ? (
+              <p style={{ color: '#64748b', fontSize: '0.9rem', textAlign: 'center' }}>No sales data available</p>
+            ) : (
+              shopSales.map((shop, index) => (
+                <div className="shop-sale-item" key={index}>
+                  <div className="shop-sale-top">
+                    <h5>{shop.name}</h5>
+                    <span className="shop-sale-amount">{shop.amount}</span>
+                  </div>
+                  <div className="shop-progress-track">
+                    <div className="shop-progress-fill" style={{ width: `${shop.percentage}%`, background: shop.color }}></div>
+                  </div>
                 </div>
-                <div className="shop-progress-track">
-                  <div className="shop-progress-fill" style={{ width: `${shop.percentage}%`, background: shop.color }}></div>
-                </div>
-              </div>
-            ))}
+              ))
+            )}
           </div>
         </div>
 
@@ -128,25 +193,27 @@ export default function DashboardPage() {
               <tr>
                 <th>Rank</th>
                 <th>Item Name</th>
-                <th>Shop</th>
                 <th>Qty Sold</th>
                 <th>Revenue</th>
               </tr>
             </thead>
             <tbody>
-              {topItems.map((item) => (
-                <tr key={item.rank}>
-                  <td>
-                    <div className={`rank-badge rank-${item.rank}`}>
-                      {item.rank}
-                    </div>
-                  </td>
-                  <td><div className="table-name-cell">{item.name}</div></td>
-                  <td>{item.shop}</td>
-                  <td>{item.qty}</td>
-                  <td className="amount-cell">{item.amount}</td>
-                </tr>
-              ))}
+              {topItems.length === 0 ? (
+                <tr><td colSpan="4" style={{textAlign: 'center', color: '#64748b', padding: '20px'}}>No items sold yet</td></tr>
+              ) : (
+                topItems.map((item) => (
+                  <tr key={item.rank}>
+                    <td>
+                      <div className={`rank-badge rank-${item.rank}`}>
+                        {item.rank}
+                      </div>
+                    </td>
+                    <td><div className="table-name-cell">{item.name}</div></td>
+                    <td>{item.qty}</td>
+                    <td className="amount-cell">{item.amount}</td>
+                  </tr>
+                ))
+              )}
             </tbody>
           </table>
         </div>

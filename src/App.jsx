@@ -8,6 +8,10 @@ import ShopPage from './pages/admin/ShopCreation'; // (Or ShopCreation)
 import DashboardPage from './pages/admin/Dashboard'; // (Or Dashboard)
 import SuperAdminPage from './pages/SuperAdminPage'; // <-- 1. ADD THIS IMPORT
 import UserPage from './pages/admin/UserPage';
+import Reports from './pages/admin/Reports';
+import BranchReportPage from './pages/admin/BranchReportPage';
+import TimeReportPage from './pages/admin/TimeReportPage';
+import OverallReportPage from './pages/admin/OverallReportPage';
 // Temporary placeholders for remaining Admin pages
 const ReportsPage = () => <div className="page-card"><h2>Reports Content Goes Here</h2></div>;
 
@@ -25,11 +29,14 @@ function App() {
           <Route path="users" element={<UserPage />} /> {/* Assuming you have this */}
           <Route path="category" element={<CategoryPage />} />
           <Route path="product" element={<ProductPage />} />
-          <Route path="reports" element={<ReportsPage />} />
+          <Route path="reports" element={<Reports />} />
+          <Route path="branch-report" element={<BranchReportPage />} />
+          <Route path="time-report" element={<TimeReportPage />} />
+          <Route path="overall-report" element={<OverallReportPage />} />
           {/* 2. ADD THIS ROUTE */}
-          <Route path="superadmin" element={<SuperAdminPage />} /> 
+          <Route path="/admin/superadmin" element={<SuperAdminPage />} /> 
         </Route>
-
+  
         {/* Cashier Routes */}
         <Route path="/cashier" element={<Layout role="cashier" />}>
           <Route path="billing" element={<BillingPage />} />

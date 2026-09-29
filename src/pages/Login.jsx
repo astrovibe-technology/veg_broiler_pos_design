@@ -43,7 +43,7 @@ export default function Login() {
 
       // Redirect based on role
       if (data.user.role === 'superadmin') {
-        navigate('/superadmin'); // <-- Added Super Admin Route
+        navigate('/admin/superadmin'); // <-- Added Super Admin Route
       } else if (data.user.role === 'admin') {
         navigate('/admin/dashboard');
       } else if (data.user.role === 'cashier') {
